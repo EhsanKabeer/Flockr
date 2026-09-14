@@ -15,28 +15,6 @@ export const authOptions: NextAuthOptions = {
         isSignUp: { label: "Is Sign Up", type: "checkbox", required: false },
       },
       async authorize(credentials) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/7d00b7e7-12c8-44ec-ac26-295d2b890d65', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Debug-Session-Id': '7d56e5',
-          },
-          body: JSON.stringify({
-            sessionId: '7d56e5',
-            runId: 'signup-run-1',
-            hypothesisId: 'H3',
-            location: 'app/api/auth/[...nextauth]/route.ts:authorize:entry',
-            message: 'Credentials authorize called',
-            data: {
-              hasEmail: !!credentials?.email,
-              isSignUp: !!credentials?.isSignUp,
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion agent log
-
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
@@ -127,27 +105,6 @@ export const authOptions: NextAuthOptions = {
             };
           }
         } catch (error: any) {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/7d00b7e7-12c8-44ec-ac26-295d2b890d65', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Debug-Session-Id': '7d56e5',
-            },
-            body: JSON.stringify({
-              sessionId: '7d56e5',
-              runId: 'signup-run-1',
-              hypothesisId: 'H4',
-              location: 'app/api/auth/[...nextauth]/route.ts:authorize:catch',
-              message: 'Error in credentials authorize',
-              data: {
-                message: error?.message ?? null,
-              },
-              timestamp: Date.now(),
-            }),
-          }).catch(() => {});
-          // #endregion agent log
-
           console.error("Auth error:", error);
           throw new Error(error.message || "Authentication failed");
         }
