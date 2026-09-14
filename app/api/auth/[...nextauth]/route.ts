@@ -83,12 +83,41 @@ export const authOptions: NextAuthOptions = {
           } else {
             // Sign in - verify password using Firebase Auth REST API
             const authResult = await verifyPassword(credentials.email, credentials.password);
-            
+
             // Get user from Firestore
-            const user = await getUserServer(authResult.localId);
-            
+            let user = await getUserServer(authResult.localId);
+
             if (!user) {
-              throw new Error("User not found");
+              // The Auth account exists and the password is correct, but there is
+              // no profile document. Sign-up writes the Auth account and the
+              // Firestore profile as two separate, non-atomic steps, so a failure
+              // between them strands the account: every later sign-in attempt
+              // looks like a rejected password. Rather than lock the user out of
+              // an account they can prove they own, backfill the profile here
+              // from what Firebase Auth already knows.
+              const fallbackUsername =
+                credentials.email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "") ||
+                `user_${authResult.localId.slice(0, 6)}`;
+
+              await createUserServer({
+                id: authResult.localId,
+                email: credentials.email,
+                username: fallbackUsername,
+                displayName: fallbackUsername,
+                bio: "",
+                avatar: "",
+                followersCount: 0,
+                followingCount: 0,
+                tweetsCount: 0,
+              });
+
+              user = await getUserServer(authResult.localId);
+
+              if (!user) {
+                throw new Error(
+                  "Your account exists but its profile could not be created. Please try again."
+                );
+              }
             }
 
             return {
